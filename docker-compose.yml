@@ -1,0 +1,11 @@
+version: '3'
+services:
+    proxy:
+        restart: unless-stopped
+        build: proxy
+        ports:
+            - 80:80/tcp
+            - 443:443/tcp
+            - 8883:8883/tcp
+        environment:
+            - CERTBOT_EMAIL=mcfitz2@gmail.com
