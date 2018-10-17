@@ -13,4 +13,4 @@ Right now, Cheeseball will consist of the following services along with a client
 * Auth: authenticates users
 * API: gateway to core services (feeder, owner)
 * Web: UI, only talks to API
-* NotificationService: sends notifications via email
+* Notifications: sends notifications via email
