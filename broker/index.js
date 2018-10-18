@@ -10,7 +10,7 @@ var mosca = require("mosca");
 
 
 var settings = {
-    port: 8888,
+    port: 1883,
 //    backend: ascoltatore,
     logger: {
         name: "broker",
