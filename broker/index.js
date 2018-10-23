@@ -27,12 +27,20 @@ server.on('clientDisconnected', function(client) {
 
 function setup() {
         server.authorizePublish = (client, topic, payload, callback) => {
-            var auth = client.id == topic.split('/')[1] || client.id.indexOf("debug") == 0;
-            callback(null, auth);
+            try {
+                var auth = client.id == topic.split('/')[1] || client.id.indexOf("tester") == 0;
+                callback(null, auth);
+            } catch {
+                callback(null, false);
+            }
         }
         server.authorizeSubscribe = (client, topic, callback) => {
-            var auth = client.id == topic.split('/')[1] || client.id.indexOf("tester") == 0;
-            callback(null, auth);
+            try {
+                var auth = client.id == topic.split('/')[1] || client.id.indexOf("tester") == 0;
+                callback(null, auth);
+            } catch {
+                callback(null, false)
+            }
         }
     console.log('Mosca server is up and running');
 }

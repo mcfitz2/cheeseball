@@ -1,11 +1,27 @@
 version: '3'
 services:
-    proxy:
-        restart: unless-stopped
-        build: proxy
-        ports:
-            - 80:80/tcp
-            - 443:443/tcp
-            - 8883:8883/tcp
-        environment:
-            - CERTBOT_EMAIL=mcfitz2@gmail.com
+#  proxy:
+#    restart: unless-stopped
+#    build: proxy
+#    ports:
+#      - 80:80/tcp
+#      - 443:443/tcp
+#      - 8883:8883/tcp
+#    environment:
+#      - CERTBOT_EMAIL=mcfitz2@gmail.com
+  broker:
+    restart: unless-stopped
+    image: eclipse-mosquitto
+    ports:
+      - 1883:1883
+    depends_on:
+      - redis
+  feeder-service:
+    build: feeder-service
+    container_name: "feeder-service"
+    depends_on:
+      - broker
+    env_file:
+      - .env
+  redis:
+    image: redis
