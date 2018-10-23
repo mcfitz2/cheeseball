@@ -80,11 +80,11 @@ class Feeder(mqtt.Client):
 		mqtt.Client.__init__(self, uid)
 		self.uid = uid
 		self.mech = mech
-		self.connect(host, port, 60)
+		self.connect(host, int(port), 60)
 		self.subscribe("feeders/"+self.uid+"/#", 0)
 		self.callbacks = {
 			"feed_requested":self.feed, 
-			"heartbeat":self.heartbeat,
+			"heartbeat_requested":self.heartbeat,
 		}
 	def _build_topic(self, event_name):
 		return "feeders/"+self.uid+"/"+event_name
@@ -103,7 +103,7 @@ class Feeder(mqtt.Client):
 	    print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
 	    message = json.loads(msg.payload.decode('utf-8'))
 	    try:
-	    	uid, topic = msg.topic.split("/")
+	    	uid, topic = msg.topic.split("/")[1:3]
 	    	cb = self.callbacks.get(topic)
 	    	if cb:
 	    		cb(msg.topic, message)
@@ -125,7 +125,8 @@ class Feeder(mqtt.Client):
 		try:
 			self.loop_start()
 			while True:
-				self.publish(self._build_topic("heartbeat"), json.dumps({"status":"GOOD"}))
+				#self.publish(self._build_topic("heartbeat"), json.dumps({"status":"GOOD"}))
+				self.heartbeat(None, None)
 				time.sleep(5)
 		except KeyboardInterrupt:
 			self.loop_stop()
