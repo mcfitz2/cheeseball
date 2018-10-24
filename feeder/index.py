@@ -137,7 +137,7 @@ if __name__ == '__main__':
 	else:
 		mech = FeedMechDummy()
 	mech.home()
-	feeder = Feeder(host=os.environ['MQTT_HOST'], port=os.environ['MQTT_PORT'], mech=mech)
+	feeder = Feeder(host=os.environ['MQTT_HOST'], port=os.environ['MQTT_PORT'], mech=mech, uid=os.environ["UID"])
 	print("Starting up...")
 	time.sleep(10)
 	feeder.start()
