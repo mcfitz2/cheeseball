@@ -34,7 +34,8 @@ MongoClient.connect(process.env.MONGO_URL, function(err, client) {
 
 	app.post("/:feeder_uid/feed", (req, res) => {
 		let cups = req.body.cups
-		client.publish("feeders/"+req.params.feeder_uid+"/feed", JSON.stringify({cups:cups}))
+		client.publish("feeders/"+req.params.feeder_uid+"/feed_requested", JSON.stringify({cups:cups}))
+		return res.status(200).send()
 	})
 
 	app.post("/:feeder_uid/snapshot", (req, res) => {

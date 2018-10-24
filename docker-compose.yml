@@ -19,6 +19,8 @@ services:
   feeder-service:
     build: feeder-service
     container_name: "feeder-service"
+    ports:
+      - 8000:8000
     depends_on:
       - broker
     env_file:
