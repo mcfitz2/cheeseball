@@ -7,7 +7,7 @@ RUN apk --no-cache --virtual build-dependencies add \
     python \
     git \
     make \
-    g++ 
+    g++
 RUN mkdir -p /app
 WORKDIR /app
 COPY . /app

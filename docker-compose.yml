@@ -25,5 +25,12 @@ services:
       - broker
     env_file:
       - .env
+  user-service:
+    build: user-service
+    container_name: "user-service"
+    ports:
+      - 8001:8000
+    env_file:
+      - .env
   redis:
     image: redis

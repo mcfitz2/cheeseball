@@ -3,11 +3,13 @@ require 'sinatra'
 require 'mongo'
 require 'json/ext' # required for .to_json
 require 'bcrypt'
-
+require 'jwt'
+$stdout.sync = true
 configure do
   db = Mongo::Client.new(ENV['MONGO_URL'])  
+  set :bind, '0.0.0.0'
+
   set :mongo_db, db[:users]
-#  enable :logging
   puts 'hello'
 end
 def hash_password(password)
@@ -17,11 +19,53 @@ end
 def test_password(password, hash)
   BCrypt::Password.new(hash) == password
 end
+def token username
+  JWT.encode payload(username), ENV['JWT_SECRET'], 'HS256'
+end
+helpers do
+  def protected!
+    begin
+      options = { algorithm: 'HS256', iss: ENV['JWT_ISSUER'] }
+      bearer = env.fetch('HTTP_AUTHORIZATION', '').slice(7..-1)
+      payload, header = JWT.decode bearer, ENV['JWT_SECRET'], true, options
+      puts "PAYLOAD", payload
+      env[:scopes] = payload['scopes']
+      env[:user] = payload['user']
 
+    rescue JWT::DecodeError
+      puts "need token"
+      halt 401, { 'Content-Type' => 'text/plain' }, ['A token must be passed.']
+    rescue JWT::ExpiredSignature
+      puts "expired"
+      halt 403, { 'Content-Type' => 'text/plain' }, ['The token has expired.']
+    rescue JWT::InvalidIssuerError
+      puts "bad issuer"
+      halt 403, { 'Content-Type' => 'text/plain' }, ['The token does not have a valid issuer.']
+    rescue JWT::InvalidIatError
+      puts "bad issued time"
+      halt 403, { 'Content-Type' => 'text/plain' }, ['The token does not have a valid "issued at" time.']
+    end
+  end
+end
+
+def payload username
+  {
+    exp: Time.now.to_i + 60 * 60,
+    iat: Time.now.to_i,
+    iss: ENV['JWT_ISSUER'],
+    user: {
+      username: username
+    }
+  }
+end
 
 get '/users' do
+  puts "This route is protected"
+  protected!
+  user = request.env.values_at :user
+  puts user
   content_type :json
-  settings.mongo_db.find.to_a.to_json
+  settings.mongo_db.find(params).to_a.to_json
 end
 
 post '/users' do
@@ -44,12 +88,6 @@ patch '/users/:user_id' do
   find_one_and_update('$set' => payload)
   200
 end
-get '/users/search' do 
-  content_type :json
-  db = settings.mongo_db
-  db.find(params).to_a.to_json
-  'HELP'
-end
 delete '/users/:user_id' do
   content_type :json
   id = BSON::ObjectId.from_string(params[:user_id])
@@ -66,8 +104,7 @@ post '/users/:user_id/password' do
   content_type :json
   new_password = hash_password(params[:password])
   id = BSON::ObjectId.from_string(params[:user_id])
-  settings.mongo_db.find_one_and_update({:_id => id}, {'$set' => { :password => new_password }}, :return_document => :after).to_json
-  200  
+  settings.mongo_db.find_one_and_update({:_id => id}, {'$set' => { :password => new_password }}, :return_document => :after).to_json  
 end
 post '/authenticate' do 
 	username = params[:username]
@@ -75,8 +112,8 @@ post '/authenticate' do
 	user = settings.mongo_db.find(:username => username).limit(1).first
 	puts username, password, user
 	if test_password(password, user[:password])
-		user.to_json
+		{ token: token(username) }.to_json
 	else
-		400
+		halt 401
 	end
 end
