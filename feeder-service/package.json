@@ -12,6 +12,7 @@
     "express": "^4.16.4",
     "mongodb": "^3.1.8",
     "mqtt": "^2.18.8",
-    "mqtt-route": "git+https://github.com/mcfitz2/mqtt-route.git"
+    "mqtt-route": "git+https://github.com/mcfitz2/mqtt-route.git",
+    "node-cron": "^2.0.3"
   }
 }
