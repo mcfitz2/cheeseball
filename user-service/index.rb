@@ -23,6 +23,9 @@ def token username
   JWT.encode payload(username), ENV['JWT_SECRET'], 'HS256'
 end
 helpers do
+  def scope_check!
+    puts env[:scopes]
+    puts env[:user]
   def protected!
     begin
       options = { algorithm: 'HS256', iss: ENV['JWT_ISSUER'] }
@@ -48,20 +51,21 @@ helpers do
   end
 end
 
-def payload username
+def payload user
   {
     exp: Time.now.to_i + 60 * 60,
     iat: Time.now.to_i,
     iss: ENV['JWT_ISSUER'],
     user: {
-      username: username
+      username: user.username
+      id: user._id
     }
   }
 end
 
 get '/users' do
-  puts "This route is protected"
   protected!
+  scope_check!
   user = request.env.values_at :user
   puts user
   content_type :json
@@ -69,18 +73,21 @@ get '/users' do
 end
 
 post '/users' do
+  protected!
   content_type :json
   db = settings.mongo_db
   payload = JSON.parse(request.body.read).symbolize_keys
   result = db.insert_one payload
   db.find(:_id => result.inserted_id).to_a.first.to_json
 end
-get '/users/:user_id'  do 
+get '/users/:user_id'  do
+  protected! 
   content_type :json
   db = settings.mongo_db
   db.find(:id => params[:user_id]).to_a.to_json
 end
 patch '/users/:user_id' do
+  protected!
   content_type :json
   id = BSON::ObjectId.from_string(params[:user_id])
   payload = JSON.parse(request.body.read).symbolize_keys
@@ -89,6 +96,7 @@ patch '/users/:user_id' do
   200
 end
 delete '/users/:user_id' do
+  protected!
   content_type :json
   id = BSON::ObjectId.from_string(params[:user_id])
   documents = db.find(:_id => id)
@@ -101,6 +109,7 @@ delete '/users/:user_id' do
 end
 
 post '/users/:user_id/password' do
+  protected!
   content_type :json
   new_password = hash_password(params[:password])
   id = BSON::ObjectId.from_string(params[:user_id])
@@ -110,9 +119,8 @@ post '/authenticate' do
 	username = params[:username]
 	password = params[:password]
 	user = settings.mongo_db.find(:username => username).limit(1).first
-	puts username, password, user
 	if test_password(password, user[:password])
-		{ token: token(username) }.to_json
+		{ token: token(user) }.to_json
 	else
 		halt 401
 	end
